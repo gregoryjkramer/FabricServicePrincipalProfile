@@ -1,0 +1,144 @@
+table Sales
+	lineageTag: e3ea7f30-b21f-4a8b-b3ac-8151826c43eb
+	sourceLineageTag: [dbo].[sales]
+
+	measure 'Sales Revenue' = Sum(Sales[Sales])
+		formatString: \$#,0;(\$#,0);\$#,0
+		displayFolder: Sales Metrics
+		lineageTag: 36a520c2-131a-486c-b07e-244bf59a1742
+
+	measure 'Customer Count' = DISTINCTCOUNT(Sales[CustomerId])
+		formatString: #,0
+		displayFolder: Sales Metrics
+		lineageTag: a256d85a-134a-44de-9109-c23e600dd9b0
+
+	measure 'First Sale' = FIRSTDATE(Sales[Date])
+		formatString: Short Date
+		displayFolder: Date Metrics
+		lineageTag: 57790ace-7da3-488b-baa0-5fd80fecb7f6
+
+	measure 'Last Sale' = LASTDATE(Sales[Date])
+		formatString: Short Date
+		displayFolder: Date Metrics
+		lineageTag: c2527bba-8692-47fa-85fb-e89bbcdf6710
+
+	measure 'Units Sold' = SUM(Sales[Quantity])
+		formatString: #,0
+		displayFolder: Sales Metrics
+		lineageTag: 125ba434-fb41-49a9-b85a-8a187aaada34
+
+	measure 'City Rank' = ```
+			
+			IF( 
+			  HASONEVALUE(Customers[City]), 
+			  RANKX( 
+			    ALLSELECTED(Customers[City]), 
+			    CALCULATE([Sales Revenue])
+			  )
+			)
+			```
+		formatString: 0
+		displayFolder: Rank Metrics
+		lineageTag: 6d660051-c54c-44f5-a6ba-38954f07f192
+
+	measure 'Customer Rank' = ```
+			
+			IF( 
+			  HASONEVALUE(Customers[Customer]), 
+			  RANKX( 
+			    ALLSELECTED(Customers), 
+			    CALCULATE([Sales Revenue])
+			  )
+			)
+			```
+		formatString: 0
+		displayFolder: Rank Metrics
+		lineageTag: e661fe14-8664-4b46-a0c3-72a6ac3805da
+
+	measure 'Product Rank' = ```
+			
+			IF( 
+			  HASONEVALUE(Products[Product]), 
+			  RANKX( 
+			    ALLSELECTED(Products), 
+			    CALCULATE([Sales Revenue])
+			  )
+			)
+			```
+		formatString: 0
+		displayFolder: Rank Metrics
+		lineageTag: ebef281e-2f6e-47c4-8903-bd35c0c22fcc
+
+	column Date
+		dataType: dateTime
+		isHidden
+		formatString: General Date
+		lineageTag: 47900dcf-81b8-4743-b7b1-e4947caf9c67
+		sourceLineageTag: Date
+		summarizeBy: none
+		sourceColumn: Date
+
+		annotation SummarizationSetBy = Automatic
+
+	column DateKey
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 378de9f0-cfb7-45d2-a4eb-f5c65a7481c3
+		sourceLineageTag: DateKey
+		summarizeBy: none
+		sourceColumn: DateKey
+
+		annotation SummarizationSetBy = Automatic
+
+	column CustomerId
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 78eb5707-8987-4caa-b51b-cec12080104d
+		sourceLineageTag: CustomerId
+		summarizeBy: none
+		sourceColumn: CustomerId
+
+		annotation SummarizationSetBy = Automatic
+
+	column ProductId
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: ce0bc22d-fd40-4852-b072-e855cd918a4f
+		sourceLineageTag: ProductId
+		summarizeBy: none
+		sourceColumn: ProductId
+
+		annotation SummarizationSetBy = Automatic
+
+	column Sales
+		dataType: double
+		isHidden
+		lineageTag: 35dcf9aa-b0cd-4582-83d4-dd1e81c055c1
+		sourceLineageTag: Sales
+		summarizeBy: sum
+		sourceColumn: Sales
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column Quantity
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 16578b1c-ca00-4057-bcd4-b9ae1dc9dd96
+		sourceLineageTag: Quantity
+		summarizeBy: sum
+		sourceColumn: Quantity
+
+		annotation SummarizationSetBy = Automatic
+
+	partition sales = entity
+		mode: directLake
+		source
+			entityName: sales
+			expressionSource: 'DirectLake - sales'
+

@@ -1,0 +1,90 @@
+table Customers
+	lineageTag: e4eeaa86-da72-4e87-baf4-df6a99c49257
+	sourceLineageTag: [dbo].[customers]
+
+	column CustomerId
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 1ec3186f-771c-4125-87d6-c26aec9246db
+		sourceLineageTag: CustomerId
+		summarizeBy: none
+		sourceColumn: CustomerId
+
+		annotation SummarizationSetBy = Automatic
+
+	column Country
+		dataType: string
+		lineageTag: 0f0bd511-300a-43e9-a556-58554d38efba
+		sourceLineageTag: Country
+		dataCategory: Country
+		summarizeBy: none
+		sourceColumn: Country
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'City Name'
+		dataType: string
+		lineageTag: 78e4704e-af0b-4255-921b-f53edbeb64ae
+		sourceLineageTag: CityName
+		summarizeBy: none
+		sourceColumn: CityName
+
+		annotation SummarizationSetBy = Automatic
+
+	column DOB
+		dataType: dateTime
+		formatString: General Date
+		lineageTag: 8abf8232-86ca-4f30-822a-b8305ac99347
+		sourceLineageTag: DOB
+		summarizeBy: none
+		sourceColumn: DOB
+
+		annotation SummarizationSetBy = Automatic
+
+	column City
+		dataType: string
+		lineageTag: 744af4b6-19b0-4e89-91a3-e38a0f5ec5de
+		sourceLineageTag: City
+		dataCategory: Place
+		summarizeBy: none
+		sourceColumn: City
+
+		annotation SummarizationSetBy = Automatic
+
+	column Customer
+		dataType: string
+		lineageTag: c9bc6267-af65-4b8a-bbb4-285510648026
+		sourceLineageTag: Customer
+		summarizeBy: none
+		sourceColumn: Customer
+
+		annotation SummarizationSetBy = Automatic
+
+	column Age
+		dataType: int64
+		formatString: 0
+		lineageTag: 619f8765-ae67-424f-973e-bee874180175
+		sourceLineageTag: Age
+		summarizeBy: none
+		sourceColumn: Age
+
+		annotation SummarizationSetBy = Automatic
+
+	hierarchy 'Customer Geography'
+		lineageTag: a9e5decb-55d1-41de-9aec-8dc840343f8b
+
+		level Country
+			lineageTag: 642df261-4b21-4bdf-b3e6-d9acf6cb5941
+			column: Country
+
+		level City
+			lineageTag: eb646707-ea5c-4916-b161-019bd8bb82f3
+			column: City
+
+	partition customers = entity
+		mode: directLake
+		source
+			entityName: customers
+			expressionSource: 'DirectLake - sales'
+

@@ -1,0 +1,50 @@
+table Products
+	lineageTag: 5bb0ef6a-6252-4cb9-9592-139c4c451c24
+	sourceLineageTag: [dbo].[products]
+
+	column ProductId
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 59dcc1bf-0a69-47fb-b053-eafa1ad94fc3
+		sourceLineageTag: ProductId
+		summarizeBy: none
+		sourceColumn: ProductId
+
+		annotation SummarizationSetBy = Automatic
+
+	column Product
+		dataType: string
+		lineageTag: bf474eb1-e392-4854-a6ed-9770a70468cc
+		sourceLineageTag: Product
+		summarizeBy: none
+		sourceColumn: Product
+
+		annotation SummarizationSetBy = Automatic
+
+	column Category
+		dataType: string
+		lineageTag: 8d12a59e-18b1-41d8-9ca9-02a9de64a657
+		sourceLineageTag: Category
+		summarizeBy: none
+		sourceColumn: Category
+
+		annotation SummarizationSetBy = Automatic
+
+	hierarchy 'Product Category'
+		lineageTag: ef34c450-3e53-4e76-ac1f-e6d4ae34860f
+
+		level Category
+			lineageTag: c26431c9-8678-4f5a-a95f-9d8b758e99f2
+			column: Category
+
+		level Product
+			lineageTag: 88e6700a-59c0-4033-820d-f135013f6210
+			column: Product
+
+	partition products = entity
+		mode: directLake
+		source
+			entityName: products
+			expressionSource: 'DirectLake - sales'
+

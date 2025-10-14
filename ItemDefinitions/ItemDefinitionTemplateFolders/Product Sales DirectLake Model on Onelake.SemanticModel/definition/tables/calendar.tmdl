@@ -1,0 +1,127 @@
+table Calendar
+	lineageTag: da249a23-ab29-40f3-a2c5-b633f6c126d4
+	sourceLineageTag: [dbo].[calendar]
+
+	column Date
+		dataType: dateTime
+		formatString: Short Date
+		lineageTag: 6a583964-ff99-46cf-997a-75bd24a41c7f
+		sourceLineageTag: Date
+		summarizeBy: none
+		sourceColumn: Date
+
+		annotation SummarizationSetBy = Automatic
+
+	column DateKey
+		dataType: int64
+		formatString: 0
+		lineageTag: 7163c68d-5919-46dd-913d-be52e2bc070a
+		sourceLineageTag: DateKey
+		summarizeBy: none
+		sourceColumn: DateKey
+
+		annotation SummarizationSetBy = Automatic
+
+	column Year
+		dataType: int64
+		formatString: 0
+		lineageTag: 5c8c5ad6-e027-425b-a5a6-955e3b56e2fd
+		sourceLineageTag: Year
+		summarizeBy: none
+		sourceColumn: Year
+
+		annotation SummarizationSetBy = Automatic
+
+	column Quarter
+		dataType: string
+		lineageTag: fe824cbf-49df-430e-9360-480b63d18c46
+		sourceLineageTag: Quarter
+		summarizeBy: none
+		sourceColumn: Quarter
+
+		annotation SummarizationSetBy = Automatic
+
+	column Month
+		dataType: string
+		lineageTag: 52d6ecec-19f0-43d6-a2c2-53494f7ea0bf
+		sourceLineageTag: Month
+		summarizeBy: none
+		sourceColumn: Month
+
+		annotation SummarizationSetBy = Automatic
+
+	column Day
+		dataType: int64
+		formatString: 0
+		lineageTag: 0d3ecde4-8ef9-4d78-a2e4-7ad054188fdd
+		sourceLineageTag: Day
+		summarizeBy: none
+		sourceColumn: Day
+
+		annotation SummarizationSetBy = Automatic
+
+	column MonthInYear
+		dataType: string
+		lineageTag: 66eb3ebb-603e-473d-ab4f-5ec5b0b10c92
+		sourceLineageTag: MonthInYear
+		summarizeBy: none
+		sourceColumn: MonthInYear
+
+		annotation SummarizationSetBy = Automatic
+
+	column MonthInYearSort
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 85d32a1a-8549-4381-bc53-dd88159bede1
+		sourceLineageTag: MonthInYearSort
+		summarizeBy: none
+		sourceColumn: MonthInYearSort
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column DayOfWeek
+		dataType: string
+		lineageTag: 242f54d4-2dc6-475f-8e61-5879c04ca272
+		sourceLineageTag: DayOfWeek
+		summarizeBy: none
+		sourceColumn: DayOfWeek
+
+		annotation SummarizationSetBy = Automatic
+
+	column DayOfWeekSort
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: ab31df90-786e-4b89-9fb4-93a5f4edc6c0
+		sourceLineageTag: DayOfWeekSort
+		summarizeBy: none
+		sourceColumn: DayOfWeekSort
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	hierarchy 'Calendar Drilldown'
+		lineageTag: 62044b5d-6124-4d5f-a298-9a3963289151
+
+		level Year
+			lineageTag: 68171892-32ce-4740-ad72-88c724b7a805
+			column: Year
+
+		level Quarter
+			lineageTag: c73d23a3-6b7c-464f-adec-79af0123d362
+			column: Quarter
+
+		level Month
+			lineageTag: cab360ad-c9a9-4afc-989a-c62c96bead73
+			column: Month
+
+	partition calendar = entity
+		mode: directLake
+		source
+			entityName: calendar
+			expressionSource: 'DirectLake - sales'
+
