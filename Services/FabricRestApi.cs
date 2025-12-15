@@ -69,7 +69,8 @@ public class FabricRestApi {
     var workspaces = fabricApiClient.Core.Workspaces.ListWorkspaces().ToList();
 
     foreach (var workspace in workspaces) {
-      if (workspace.DisplayName.Equals(WorkspaceName)) {
+      if ((workspace.DisplayName != null) &&
+          workspace.DisplayName.Equals(WorkspaceName, StringComparison.OrdinalIgnoreCase)) {
         return workspace;
       }
     }
@@ -85,10 +86,11 @@ public class FabricRestApi {
 
     var workspace = GetWorkspaceByName(WorkspaceName);
 
-    // delete workspace with same name if it exists
+    // If workspace already exists, create with timestamp to make unique
     if (workspace != null) {
-      DeleteWorkspace(workspace.Id);
-      workspace = null;
+      AppLogger.LogSubstep($"Workspace '{WorkspaceName}' already exists - creating new workspace with timestamp");
+      WorkspaceName = $"{WorkspaceName}-{DateTime.Now:yyyyMMddHHmmss}";
+      AppLogger.LogSubstep($"New workspace name: {WorkspaceName}");
     }
 
     var createRequest = new CreateWorkspaceRequest(WorkspaceName);

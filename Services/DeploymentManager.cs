@@ -48,18 +48,15 @@ public class DeploymentManager {
 
     AppLogger.LogSolution($"Deploy Hyrbid Fabric Solution [{TargetWorkspaceName}]");
 
-    PowerBiRestApi.SetExecutionContextToSpp();
-
-    var workspace = PowerBiRestApi.CreatWorkspace(TargetWorkspaceName);
-
-    PowerBiRestApi.AddServicePrincipalAsWorkspaceAdmin(workspace);
+    // Use Fabric REST API instead of Power BI API for workspace creation (works better with trial capacities)
+    var workspace = FabricRestApi.CreateWorkspace(TargetWorkspaceName, AppSettings.FabricCapacityId);
 
     PowerBiRestApi.SetExecutionContextToSpn();
 
     string lakehouseName = "sales";
 
     var lakehouse = FabricRestApi.CreateLakehouse(workspace.Id, lakehouseName);
-
+  
     // create and run notebook to build bronze layer
     string notebook1Name = "Create Lakehouse Tables";
     var notebook1CreateRequest = ItemDefinitionFactory.GetCreateNotebookRequestFromPy(

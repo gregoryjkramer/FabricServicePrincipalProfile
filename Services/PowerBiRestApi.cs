@@ -5,6 +5,7 @@ using System.Net.Http.Headers;
 using System;
 using Microsoft.PowerBI.Api.Models.Credentials;
 using System.Text;
+using Microsoft.Fabric.Api.Core.Models;
 
 // data required for embedding a report
 public class ReportEmbeddingData {
@@ -23,21 +24,26 @@ public class PowerBiRestApi {
   private static PowerBIClient pbiClientSpn;
   private static PowerBIClient pbiClientSpp;
 
-  private static string accessToken;
-
   static PowerBiRestApi() {
 
-    var accessTokenResult = EntraIdTokenManager.GetAccessTokenResult();
-    accessToken = accessTokenResult.AccessToken;
+    var accessTokenResult = EntraIdTokenManager.GetAccessTokenResult(PowerBiPermissionScopes.Default);
+    var tokenCredentials = new TokenCredentials(accessTokenResult.AccessToken, "Bearer");
     string urlPowerBiServiceApiRoot = AppSettings.PowerBiRestApiBaseUrl;
-    var tokenCredentials = new TokenCredentials(accessToken, "Bearer");
 
-    Guid servicePrinciaplProfileId = new Guid(AppSettings.ServicePrincipalProfileId);
     pbiClientSpn = new PowerBIClient(new Uri(urlPowerBiServiceApiRoot), tokenCredentials);
-    pbiClientSpp = new PowerBIClient(new Uri(urlPowerBiServiceApiRoot), tokenCredentials, servicePrinciaplProfileId);
 
-    // set pbiClient to pbiClientSpp by default
-    pbiClient = pbiClientSpp;
+    // Only create SPP client if a valid Service Principal Profile ID is configured
+    if (Guid.TryParse(AppSettings.ServicePrincipalProfileId, out Guid servicePrincipalProfileId) && 
+        servicePrincipalProfileId != Guid.Empty) {
+      Guid servicePrinciaplProfileId = new Guid(AppSettings.ServicePrincipalProfileId);
+      pbiClientSpp = new PowerBIClient(new Uri(urlPowerBiServiceApiRoot), tokenCredentials, servicePrinciaplProfileId);
+      pbiClient = pbiClientSpp;
+    }
+    else {
+      // If no SPP is configured, use SPN client by default
+      pbiClientSpp = pbiClientSpn;
+      pbiClient = pbiClientSpn;
+    }
 
   }
 
@@ -226,7 +232,15 @@ public class PowerBiRestApi {
 
     // create new workspace
     GroupCreationRequest request = new GroupCreationRequest(Name);
-    workspace = pbiClient.Groups.CreateGroup(request);
+    try {
+      workspace = pbiClient.Groups.CreateGroup(request);
+    }
+    catch (Microsoft.Rest.HttpOperationException ex) {
+      AppLogger.LogStep($"Error creating workspace: {ex.Message}");
+      AppLogger.LogStep($"Status Code: {ex.Response.StatusCode}");
+      AppLogger.LogStep($"Response Content: {ex.Response.Content}");
+      throw;
+    }
 
     AppLogger.LogSubstep($"New workspace created with Id of [{workspace.Id}]");
 
@@ -247,21 +261,20 @@ public class PowerBiRestApi {
 
   public static void AddAdminUserAsWorkspaceAdmin(Group Workspace) {
     AppLogger.LogSubstep($"Adding Admin User to workspace as admin");
-    pbiClient.Groups.AddGroupUser(Workspace.Id, new GroupUser {
+    pbiClient.Groups.AddGroupUser(Workspace.Id, new Microsoft.PowerBI.Api.Models.GroupUser {
       Identifier = AppSettings.AdminUserId,
-      PrincipalType = PrincipalType.User,
-      EmailAddress = "ted@fabricdevcamp.net",
+      PrincipalType = Microsoft.PowerBI.Api.Models.PrincipalType.User,
+      EmailAddress = "greg@tenaciousdata.com    ",
       GroupUserAccessRight = "Admin"
     });
-
   }
 
-  public static void AddServicePrincipalAsWorkspaceAdmin(Group Workspace) {
+  public static void AddServicePrincipalAsWorkspaceAdmin(Microsoft.Fabric.Api.Core.Models.Workspace workspace) {
     AppLogger.LogSubstep($"Adding SPN to workspace as admin");
-    pbiClient.Groups.AddGroupUser(Workspace.Id,
-      new GroupUser {
+    pbiClient.Groups.AddGroupUser(workspace.Id,
+      new Microsoft.PowerBI.Api.Models.GroupUser {
         Identifier = AppSettings.ServicePrincipalObjectId,
-        PrincipalType = PrincipalType.App,
+        PrincipalType = Microsoft.PowerBI.Api.Models.PrincipalType.App,
         GroupUserAccessRight = "Admin"
       });
 
@@ -401,10 +414,10 @@ public class PowerBiRestApi {
 
         // Initialize UpdateDatasourceRequest object with AnonymousCredentials
         UpdateDatasourceRequest req = new UpdateDatasourceRequest {
-          CredentialDetails = new CredentialDetails(
+          CredentialDetails = new Microsoft.PowerBI.Api.Models.CredentialDetails(
             new Microsoft.PowerBI.Api.Models.Credentials.AnonymousCredentials(),
-            PrivacyLevel.Organizational,
-            EncryptedConnection.NotEncrypted)
+            Microsoft.PowerBI.Api.Models.PrivacyLevel.Organizational,
+            Microsoft.PowerBI.Api.Models.EncryptedConnection.NotEncrypted)
         };
 
         // Update datasource credentials through Gateways - UpdateDatasource
@@ -531,4 +544,8 @@ public class PowerBiRestApi {
   #endregion
 
 }
+
+public static class PowerBiPermissionScopes {
+     public static readonly string[] Default = { "https://analysis.windows.net/powerbi/api/.default" };
+   }
 
