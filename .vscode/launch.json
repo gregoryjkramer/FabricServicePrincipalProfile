@@ -1,0 +1,21 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": ".NET Launch (FabricServicePrincipalProfile)",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build FabricServicePrincipalProfile",
+      "program": "dotnet",
+      "args": [
+        "run",
+        "--project",
+        "${workspaceFolder}/FabricServicePrincipalProfile.csproj"
+      ],
+      "cwd": "${workspaceFolder}",
+      "envFile": "${workspaceFolder}/.env",
+      "console": "integratedTerminal",
+      "stopAtEntry": false
+    }
+  ]
+}
