@@ -1,39 +1,67 @@
-﻿class Program {
+﻿using System;
+using Azure.Identity;
+using Azure.Extensions.AspNetCore.Configuration.Secrets;
+using Microsoft.Extensions.Configuration;
 
-  #region "Testing stuff"
+namespace FabricServicePrincipalProfile
+{
+    internal class Program
+    {
+        static void Main(string[] args)
+        {
+            try
+            {
+                Console.WriteLine(">>> ENTERED Main");
 
-  static void DisplayCapacities() {
-    var capacities = FabricRestApi.GetCapacities();
-    foreach (var capacity in capacities) {
-      Console.WriteLine(capacity.Sku + " - " + capacity.Id.ToString());
+                // 1. Build base configuration (NO secrets here)
+                var configBuilder = new ConfigurationBuilder()
+                    .SetBasePath(AppContext.BaseDirectory)
+                    .AddJsonFile("appsettings.json", optional: true)
+                    .AddEnvironmentVariables();
+
+                var preConfig = configBuilder.Build();
+                Console.WriteLine(">>> Base configuration built");
+
+                // 2. Load Key Vault EARLY
+                var keyVaultUri = preConfig["KeyVault:Uri"];
+                if (string.IsNullOrWhiteSpace(keyVaultUri))
+                    throw new InvalidOperationException("KeyVault:Uri is missing");
+
+                Console.WriteLine($">>> Using Key Vault: {keyVaultUri}");
+
+                var credential = new DefaultAzureCredential(new DefaultAzureCredentialOptions
+                {
+                    ExcludeManagedIdentityCredential = true
+                });
+
+                configBuilder.AddAzureKeyVault(
+                    new Uri(keyVaultUri),
+                    credential);
+                var configuration = configBuilder.Build();
+                Console.WriteLine(">>> Key Vault configuration loaded");
+
+                // 3. Initialize AppSettings
+                AppSettings.Initialize(configuration);
+                Console.WriteLine(">>> AppSettings initialized");
+
+                // 4. Initialize Fabric API
+                FabricRestApi.Initialize();
+                Console.WriteLine(">>> FabricRestApi initialized");
+
+                // 5. Run deployment
+                Console.WriteLine(">>> Starting deployment");
+                DeploymentManager.Deploy_Hybrid_Solution("Contoso");
+                Console.WriteLine(">>> Deployment completed successfully");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(">>> FATAL ERROR");
+                Console.WriteLine(ex.ToString());
+            }
+
+            // 6. Prevent instant exit
+            Console.WriteLine(">>> Press ENTER to exit");
+            Console.ReadLine();
+        }
     }
-  }
-
-  static void CreateServicePrincipalProfilDisplayName() {
-    string ProfileName = "Contoso";
-    PowerBiRestApi.CreateSPProfile(ProfileName);
-    PowerBiRestApi.DisplaySPProfiles();
-  }
-
-  static void UpdateServicePrincipalProfilDisplayName() {
-    string ProfileName = "Contoso";
-    PowerBiRestApi.UpdateSPProfile(new Guid(AppSettings.ServicePrincipalProfileId), ProfileName);
-    PowerBiRestApi.DisplaySPProfiles();
-  }
-
-  #endregion
-
-  static void Main(string[] args) {
-
-    //PowerBiRestApi.DisplaySPProfiles();
-
-    //DeploymentManager.Deploy_Pure_PowerBi_Solution("Contoso - Classic PBIE");
-    
-    DeploymentManager.Deploy_Hybrid_Solution("Contoso");
-    
-    //DeploymentManager.Deploy_Pure_Fabric_Solution("Contoso-fabric");
-
-    //DeploymentManager.Embed_Report_With_SPP("Contoso");
-  }
-
 }

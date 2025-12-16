@@ -1,10 +1,11 @@
-﻿using System.Diagnostics;
-using System.Text;
-using System.Text.Json;
+﻿using Microsoft.Fabric.Api;
+using Microsoft.Fabric.Api.Core.Models;
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using Microsoft.Fabric.Api.Core.Models;
+using System.Text;
+using System.Text.Json;
 
 
 public class DeploymentManager {
@@ -48,24 +49,61 @@ public class DeploymentManager {
 
     AppLogger.LogSolution($"Deploy Hyrbid Fabric Solution [{TargetWorkspaceName}]");
 
-    // Use Fabric REST API instead of Power BI API for workspace creation (works better with trial capacities)
-    var workspace = FabricRestApi.CreateWorkspace(TargetWorkspaceName, AppSettings.FabricCapacityId);
-
     PowerBiRestApi.SetExecutionContextToSpn();
+
+    Console.WriteLine(">>> AFTER SetExecutionContextToSpn");
+
+    // ---- NEXT CALL INSTRUMENTATION ----
+
+    Console.WriteLine(">>> BEFORE GetWorkspaceByName");
+    var existingWorkspace = FabricRestApi.GetWorkspaceByName(TargetWorkspaceName);
+    Console.WriteLine(">>> AFTER GetWorkspaceByName");
+
+    Console.WriteLine(">>> BEFORE CreateWorkspace");
+    var workspace = existingWorkspace
+        ?? FabricRestApi.CreateWorkspace(
+            TargetWorkspaceName,
+            AppSettings.FabricCapacityId,
+            "Hybrid Fabric Workspace");
+    Console.WriteLine(">>> AFTER CreateWorkspace");
+
+    AppLogger.LogStep($"Workspace selected: {workspace.DisplayName}");
+    AppLogger.LogSubstep($"WorkspaceId: {workspace.Id}");
+    AppLogger.LogSubstep($"Workspace URL: https://app.powerbi.com/groups/{workspace.Id}");
+
+    Console.WriteLine(">>> BEFORE AssignWorkspaceToCapacity");
+    FabricRestApi.AssignWorkspaceToCapacity(
+        workspace.Id,
+        new Guid(AppSettings.FabricCapacityId));
+    Console.WriteLine(">>> AFTER AssignWorkspaceToCapacity");
+
+    var existingItems = FabricRestApi.ListItems(workspace.Id);
+    foreach (var item in existingItems)
+    {
+        AppLogger.LogSubstep($"Existing item: {item.Type} :: {item.DisplayName}");
+    }
 
     string lakehouseName = "sales";
 
-    var lakehouse = FabricRestApi.CreateLakehouse(workspace.Id, lakehouseName);
+    var existingLakehouse = FabricRestApi.FindItem(workspace.Id, lakehouseName, ItemType.Lakehouse);
+    var lakehouse = existingLakehouse ?? FabricRestApi.CreateLakehouse(workspace.Id, lakehouseName);
+    AppLogger.LogSubstep(existingLakehouse != null
+        ? $"Reusing lakehouse {lakehouse.Id}"
+        : $"Created lakehouse {lakehouse.Id}");
   
     // create and run notebook to build bronze layer
     string notebook1Name = "Create Lakehouse Tables";
+    var existingNotebook = FabricRestApi.FindItem(workspace.Id, notebook1Name, ItemType.Notebook);
     var notebook1CreateRequest = ItemDefinitionFactory.GetCreateNotebookRequestFromPy(
-      workspace.Id, 
-      lakehouse, 
-      notebook1Name, 
+      workspace.Id,
+      lakehouse,
+      notebook1Name,
       "CreateLakehouseTables.py");
 
-    var notebook1 = FabricRestApi.CreateItem(workspace.Id, notebook1CreateRequest);
+    var notebook1 = existingNotebook ?? FabricRestApi.CreateItem(workspace.Id, notebook1CreateRequest);
+    AppLogger.LogSubstep(existingNotebook != null
+        ? $"Reusing notebook {notebook1.Id}"
+        : $"Created notebook {notebook1.Id}");
 
     FabricRestApi.RunNotebook(workspace.Id, notebook1);
 
@@ -85,9 +123,12 @@ public class DeploymentManager {
 
     AppLogger.LogStep($"Creating [{modelCreateRequest.DisplayName}.SemanticModel]");
 
-    var model = FabricRestApi.CreateItem(workspace.Id, modelCreateRequest);
+    var existingModel = FabricRestApi.FindItem(workspace.Id, modelCreateRequest.DisplayName, ItemType.SemanticModel);
+    var model = existingModel ?? FabricRestApi.CreateItem(workspace.Id, modelCreateRequest);
 
-    AppLogger.LogSubstep($"Semantic model created with Id of [{model.Id.Value.ToString()}]");
+    AppLogger.LogSubstep(existingModel != null
+        ? $"Reusing semantic model {model.Id.Value}"
+        : $"Semantic model created with Id of [{model.Id.Value.ToString()}]");
 
     var workspaceFabric = FabricRestApi.GetWorkspaceByName(TargetWorkspaceName);
 
@@ -99,8 +140,11 @@ public class DeploymentManager {
     var createRequestReport =
       ItemDefinitionFactory.GetReportCreateRequestFromReportJson(model.Id.Value, reportName, "product_sales_summary.json");
 
-    var report = FabricRestApi.CreateItem(workspace.Id, createRequestReport);
-    AppLogger.LogSubstep($"Report created with Id of [{report.Id.Value.ToString()}]");
+    var existingReport = FabricRestApi.FindItem(workspace.Id, reportName, ItemType.Report);
+    var report = existingReport ?? FabricRestApi.CreateItem(workspace.Id, createRequestReport);
+    AppLogger.LogSubstep(existingReport != null
+        ? $"Reusing report {report.Id.Value}"
+        : $"Report created with Id of [{report.Id.Value.ToString()}]");
 
     OpenWorkspaceInBrowser(workspace.Id.ToString());
 
@@ -220,9 +264,24 @@ public class DeploymentManager {
   }
 
 
-  #region Lab Utility Methods
+    public static void ViewWorkspaceRoleAssignments(Guid workspaceId)
+    {
+        // Compatibility shim.
+        // The Fabric SDK version referenced by this project
+        // does not expose workspace role assignment listing.
+        // This method is retained for backward compatibility
+        // and logging only.
 
-  public static void ViewWorkspaces() {
+        AppLogger.LogStep("Viewing workspace role assignments");
+        AppLogger.LogSubstep("(Workspace role assignment listing not supported by current Fabric SDK)");
+    }
+
+
+
+
+    #region Lab Utility Methods
+
+    public static void ViewWorkspaces() {
 
     var workspaces = FabricRestApi.GetWorkspaces();
 
@@ -268,7 +327,30 @@ public class DeploymentManager {
 
 
 
-    foreach (var datasource in datasources) {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        foreach (var datasource in datasources) {
 
       if (datasource.DatasourceType.ToLower() == "web") {
         string url = datasource.ConnectionDetails.Url;

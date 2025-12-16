@@ -47,21 +47,45 @@ public class PowerBiRestApi {
 
   }
 
-  public static void SetExecutionContextToSpn() {
-    AppLogger.LogSectionHeader("Switching context to execute as Service Principal (SPN)");
-    pbiClient = pbiClientSpn;
-  }
+    //public static void SetExecutionContextToSpn() {
+    //  AppLogger.LogSectionHeader("Switching context to execute as Service Principal (SPN)");
+    //  pbiClient = pbiClientSpn;
+    //}
 
-  public static void SetExecutionContextToSpp() {
-    AppLogger.LogSectionHeader("Switching context to execute as Service Principal Profile (SPP)");
-    pbiClient = pbiClientSpp;
-  }
+    //  Console.WriteLine(">>> BEFORE SPN TOKEN ACQUISITION");
 
-  #endregion
 
-  #region "Service Principal Profile CRUD"
 
-  public static void DisplaySPProfiles() {
+
+    
+    public static void SetExecutionContextToSpn()
+    {
+        Console.WriteLine(">>> ENTER SetExecutionContextToSpn");
+
+        AppLogger.LogSectionHeader("Switching context to execute as Service Principal (SPN)");
+
+        Console.WriteLine(">>> BEFORE assigning SPN client");
+        pbiClient = pbiClientSpn;
+        Console.WriteLine(">>> AFTER assigning SPN client");
+    }
+
+
+    public static void SetExecutionContextToSpp()
+    {
+        AppLogger.LogSectionHeader("Switching context to execute as Service Principal Profile (SPP)");
+        pbiClient = pbiClientSpp;
+    }
+
+
+
+
+
+
+    #endregion
+
+    #region "Service Principal Profile CRUD"
+
+    public static void DisplaySPProfiles() {
     var profiles = pbiClientSpn.Profiles.GetProfiles().Value;
     if (profiles.Count == 0) {
       AppLogger.LogStep("There are no service principal profiles");

@@ -1,22 +1,25 @@
-# Visual Studio / VS Code
-.vs/
-
-# .NET build output
+# Build output
 bin/
 obj/
 
-# Optional safety
+# Visual Studio
+.vs/
 *.user
 *.suo
+
+# VS Code (optional)
+.vscode/
+
+# Logs
 *.log
 
-
-
-
-
-
-
-
+# Local config / secrets (IMPORTANT)
+appsettings.Development.json
+appsettings.Local.json
+secrets.json
+.env
+*.pfx
+*.cer
 
 
 
