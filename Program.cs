@@ -50,7 +50,36 @@ namespace FabricServicePrincipalProfile
 
                 // 5. Run deployment
                 Console.WriteLine(">>> Starting deployment");
-                DeploymentManager.Deploy_Hybrid_Solution("Contoso");
+
+                // Optional: environment selector via command-line arg "--environment <env>"
+                var envArg = args
+                    .SkipWhile(a => a != "--environment")
+                    .Skip(1)
+                    .FirstOrDefault();
+                var environment = string.IsNullOrWhiteSpace(envArg) ? "dev" : envArg;
+                Console.WriteLine($">>> Target environment: {environment}");
+
+                // Load per-environment defaults from pipelines/env.json if present
+                var envConfigPath = Path.Combine(AppContext.BaseDirectory, "pipelines", "env.json");
+                string targetWorkspaceName = "Contoso";
+                if (File.Exists(envConfigPath))
+                {
+                    var envJson = File.ReadAllText(envConfigPath);
+                    using var doc = JsonDocument.Parse(envJson);
+                    if (doc.RootElement.TryGetProperty(environment, out var envNode))
+                    {
+                        if (envNode.TryGetProperty("workspaceName", out var nameProp) && nameProp.ValueKind == JsonValueKind.String)
+                        {
+                            targetWorkspaceName = nameProp.GetString() ?? targetWorkspaceName;
+                        }
+                    }
+                }
+
+                // Primary deploy: hybrid flow (lakehouse + notebook + semantic model + report)
+                DeploymentManager.Deploy_Hybrid_Solution(targetWorkspaceName);
+
+                // Optional: embed page generation (uncomment if desired)
+                // DeploymentManager.Embed_Report_With_SPP(targetWorkspaceName);
                 Console.WriteLine(">>> Deployment completed successfully");
             }
             catch (Exception ex)

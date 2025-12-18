@@ -522,6 +522,7 @@ public static class FabricRestApi
             throw new InvalidOperationException("Notebook start failed.");
 
         Guid jobId = response.GetTriggeredJobId();
+        AppLogger.LogSubstep($"Notebook job id: {jobId}");
 
         while (true)
         {
@@ -533,7 +534,9 @@ public static class FabricRestApi
                     jobId)
                 .Value;
 
-            if (job.Status == Status.Succeeded)
+            AppLogger.LogSubstep($"Notebook job status: {job.Status}");
+            if (job.Status == Status.Succeeded ||
+                string.Equals(job.Status.ToString(), "Completed", StringComparison.OrdinalIgnoreCase))
                 return;
 
             if (job.Status == Status.Failed)

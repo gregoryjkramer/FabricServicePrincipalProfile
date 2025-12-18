@@ -1,0 +1,29 @@
+# Minimal pipeline skeleton. Wire this to your CI system (Azure DevOps/GitHub Actions).
+# Expects env + secrets supplied by pipeline variables or Key Vault.
+
+stages:
+  - stage: deploy
+    displayName: Deploy Fabric Hybrid
+    jobs:
+      - job: deploy
+        displayName: Deploy to $(ENVIRONMENT)
+        pool:
+          vmImage: 'ubuntu-latest'
+        steps:
+          - script: |
+              dotnet restore
+              dotnet build FabricServicePrincipalProfile.csproj --configuration Release
+            displayName: Build
+          - script: |
+              dotnet run --project FabricServicePrincipalProfile.csproj -- \
+                --environment $(ENVIRONMENT)
+            displayName: Run deployment
+            env:
+              KEYVAULT_URI: $(KEYVAULT_URI)
+              APPSETTINGS__FABRICCAPACITYID: $(FABRIC_CAPACITY_ID)
+              APPSETTINGS__SERVICEPRINCIPALAUTHTENANTID: $(TENANT_ID)
+              APPSETTINGS__SERVICEPRINCIPALAUTHCLIENTID: $(CLIENT_ID)
+              APPSETTINGS__SERVICEPRINCIPALAUTHCLIENTSECRET: $(CLIENT_SECRET)
+              APPSETTINGS__SERVICEPRINCIPALOBJECTID: $(SP_OBJECT_ID)
+              APPSETTINGS__SERVICEPRINCIPALPROFILEID: $(SP_PROFILE_ID)
+              APPSETTINGS__ADMINUSERID: $(ADMIN_USER_ID)
