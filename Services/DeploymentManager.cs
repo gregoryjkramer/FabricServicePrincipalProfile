@@ -18,9 +18,11 @@ public class DeploymentManager {
 
     AppLogger.LogSolution($"Deploy Pure Power BI REST API Solution [{TargetWorkspaceName}]");
 
-    PowerBiRestApi.SetExecutionContextToSpp();
+    //PowerBiRestApi.SetExecutionContextToSpp();
+    PowerBiRestApi.SetExecutionContextToSpn();
 
-    var workspace = PowerBiRestApi.CreatWorkspace(TargetWorkspaceName);
+
+        var workspace = PowerBiRestApi.CreatWorkspace(TargetWorkspaceName);
 
     byte[] pbixProductSales = DeploymentManager.GetPbixContent("ProductSales.pbix");
     string importName = "Product Sales";
@@ -49,6 +51,7 @@ public class DeploymentManager {
 
     AppLogger.LogSolution($"Deploy Hyrbid Fabric Solution [{TargetWorkspaceName}]");
 
+    PowerBiRestApi.Initialize();              // add this
     PowerBiRestApi.SetExecutionContextToSpn();
 
     Console.WriteLine(">>> AFTER SetExecutionContextToSpn");
@@ -105,7 +108,9 @@ public class DeploymentManager {
         ? $"Reusing notebook {notebook1.Id}"
         : $"Created notebook {notebook1.Id}");
 
+    AppLogger.LogSubOperationStart("Running notebook");
     FabricRestApi.RunNotebook(workspace.Id, notebook1);
+    AppLogger.LogOperationComplete();
 
     string onelakePath = FabricRestApi.GetOnelakePathForLakehouse(workspace.Id, lakehouse.Id.Value);
 
@@ -148,9 +153,22 @@ public class DeploymentManager {
 
     OpenWorkspaceInBrowser(workspace.Id.ToString());
 
-    PowerBiRestApi.SetExecutionContextToSpp();
+        //PowerBiRestApi.SetExecutionContextToSpp();
 
-    EmbeddedWebPageGenerator.GenerateReportPageAppOwnsData(workspace.Id, report.Id.Value);
+       // PowerBiRestApi.SetExecutionContextToSpn();
+
+
+
+
+
+
+
+
+
+
+
+
+        EmbeddedWebPageGenerator.GenerateReportPageAppOwnsData(workspace.Id, report.Id.Value);
 
     AppLogger.LogStep("Solution deployment complete");
 
@@ -359,7 +377,10 @@ public class DeploymentManager {
         var webConnection = FabricRestApi.CreateAnonymousWebConnection(url, Workspace);
 
         AppLogger.LogSubstep($"Binding connection to semantic model");
-        PowerBiRestApi.BindSemanticModelToConnection(Workspace.Id, SemanticModelId, webConnection.Id);
+        PowerBiRestApi.BindSemanticModelToConnection(
+    Workspace.Id,
+    SemanticModelId,
+    webConnection.Id.ToString());
 
         AppLogger.LogSubOperationStart($"Refreshing semantic model");
         PowerBiRestApi.RefreshDataset(Workspace.Id, SemanticModelId);
@@ -373,7 +394,7 @@ public class DeploymentManager {
         string path = datasource.ConnectionDetails.Path;
         var connection = FabricRestApi.CreateAzureStorageConnectionWithServicePrincipal(server, path, Workspace, Lakehouse);
         AppLogger.LogSubstep($"Binding connection to semantic model");
-        PowerBiRestApi.BindSemanticModelToConnection(Workspace.Id, SemanticModelId, connection.Id);
+        PowerBiRestApi.BindSemanticModelToConnection(Workspace.Id, SemanticModelId,     connection.Id.ToString());
         PowerBiRestApi.RefreshDataset(Workspace.Id, SemanticModelId);
       }
     }

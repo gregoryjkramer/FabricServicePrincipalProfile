@@ -2,6 +2,7 @@
 using Azure.Identity;
 using Azure.Extensions.AspNetCore.Configuration.Secrets;
 using Microsoft.Extensions.Configuration;
+using System.Text.Json;
 
 namespace FabricServicePrincipalProfile
 {

@@ -1,10 +1,6 @@
 ﻿using System;
 using Microsoft.Extensions.Configuration;
 
-
-
-
-
 public static class AppSettings {
 
   public const string FabricRestApiBaseUrl = "https://api.fabric.microsoft.com/v1";
@@ -54,6 +50,15 @@ public static class AppSettings {
     UserAuthRedirectUri = configuration["AppSettings:UserAuthRedirectUri"] ?? UserAuthRedirectUri;
 
     isInitialized = true;
+  }
+
+  public static void EnsureInitialized()
+  {
+    if (!isInitialized)
+    {
+      throw new InvalidOperationException(
+        "AppSettings.Initialize(configuration) must be called before use.");
+    }
   }
 
   private static string GetRequired(IConfiguration configuration, string key) {
